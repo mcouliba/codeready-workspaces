@@ -1,0 +1,27 @@
+apiVersion: v2
+publisher: redhat
+name: workshop-tools
+version: 3.1
+type: VS Code extension
+displayName: Workshop Tools
+title: Workshop Tools
+description: Develop, deploy and debug Cloud Native applications
+icon: https://www.eclipse.org/che/images/logo-eclipseche.svg
+repository: https://github.com/redhat-developer/vscode-openshift-tools
+category: Other
+firstPublicationDate: "2020-02-06"
+spec:
+  containers:
+    - image: quay.io/mcouliba/remote-plugin-workshop-tooling:3.1
+      name: workshop-tools
+      memoryLimit: "4G"
+      env:
+        - name: MAVEN_OPTS
+          value: "-Xmx2048m -Duser.home=/home/theia"
+        - name: MAVEN_MIRROR_URL
+          value: http://nexus.opentlc-shared.svc:8081/repository/maven-all-public
+  extensions:
+    - https://github.com/microsoft/vscode-java-debug/releases/download/0.20.0/vscode-java-debug-0.20.0.vsix
+    - https://download.jboss.org/jbosstools/static/jdt.ls/stable/java-0.50.0-1825.vsix
+    - https://github.com/redhat-developer/vscode-openshift-tools/releases/download/v0.1.3/openshift-connector-0.1.3-480.vsix
+    - https://github.com/redhat-developer/vscode-tekton/releases/download/v0.0.3/tekton-pipelines-0.0.3-105.vsix
