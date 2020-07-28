@@ -10,10 +10,16 @@ icon: https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/ma
 firstPublicationDate: "2020-06-02"
 category: Linter
 repository: https://www.sonarlint.org/
+deprecate:
+  automigrate: true
+  migrateTo: sonarsource/sonarlint-vscode/latest
 spec:
   containers:
-    - image: "registry.redhat.io/codeready-workspaces/plugin-java11-rhel8:2.2"
+    - image: "registry.redhat.io/codeready-workspaces/plugin-java11-rhel8:2.3"
       name: vscode-sonarlint
       memoryLimit: "512Mi"
+      volumes:
+        - mountPath: "/home/theia/.m2"
+          name: m2
   extensions:
     - https://github.com/SonarSource/sonarlint-vscode/releases/download/1.15.0/sonarlint-vscode-1.15.0.vsix

@@ -10,9 +10,12 @@ icon: https://raw.githubusercontent.com/redhat-developer/codeready-workspaces/ma
 repository: https://github.com/redhat-developer/vscode-quarkus
 category: Language
 firstPublicationDate: "2020-02-12"
+deprecate:
+  automigrate: true
+  migrateTo: redhat/quarkus-java11/latest
 spec:
   containers:
-    - image: "registry.redhat.io/codeready-workspaces/plugin-java11-rhel8:2.2"
+    - image: "registry.redhat.io/codeready-workspaces/plugin-java11-rhel8:2.3"
       name: vscode-quarkus
       memoryLimit: "3500Mi"
       args:

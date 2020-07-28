@@ -3,10 +3,10 @@
 // PARAMETERS for this pipeline:
 // node == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram||rhel7-devstudio-releng||rhel7 or rhel7-32gb||rhel7-16gb||rhel7-8gb
 // nodeBig == slave label, eg., rhel7-devstudio-releng-16gb-ram||rhel7-16gb-ram or rhel7-32gb||rhel7-16gb
-// branchToBuildDev = refs/tags/20
-// branchToBuildParent = refs/tags/7.9.3
-// branchToBuildChe = refs/tags/7.9.3 or */*/7.9.x or */master
-// branchToBuildCRW = */7.9.x or */master
+// branchToBuildDev = refs/tags/19
+// branchToBuildParent = refs/tags/7.15.0
+// branchToBuildChe = refs/tags/7.16.x
+// branchToBuildCRW = master
 // BUILDINFO = ${JOB_NAME}/${BUILD_NUMBER}
 // MVN_EXTRA_FLAGS = extra flags, such as to disable a module -pl '!org.eclipse.che.selenium:che-selenium-test'
 // SCRATCH = true (don't push to Quay) or false (do push to Quay)
@@ -63,7 +63,8 @@ def SHA_CRW = "SHA_CRW"
 
 timeout(240) {
 	node("${node}"){ stage "Build ${DEV_path}, ${PAR_path}, ${CHE_DB_path}, ${CHE_WL_path}, and ${CRW_path}"
-	  wrap([$class: 'TimestamperBuildWrapper']) {
+		wrap([$class: 'TimestamperBuildWrapper']) {
+        	withCredentials([string(credentialsId:'devstudio-release.token', variable: 'GITHUB_TOKEN')]) {
 		cleanWs()
 		buildMaven()
 		installNPM()
@@ -234,6 +235,27 @@ timeout(240) {
 		// unpack asset-*.tgz into folder where mvn can access it
 		// use that content when building assembly main and ws assembly?
 
+		sh '''#!/bin/bash -xe
+		cd ''' + CRW_path + '''
+  		git checkout --track origin/''' + branchToBuildCRW + ''' || true
+  		export GITHUB_TOKEN=''' + GITHUB_TOKEN + ''' # echo "''' + GITHUB_TOKEN + '''"
+		git config user.email "nickboldt+devstudio-release@gmail.com"
+		git config user.name "Red Hat Devstudio Release Bot"
+		git config --global push.default matching
+
+		# SOLVED :: Fatal: Could not read Username for "https://github.com", No such device or address :: https://github.com/github/hub/issues/1644
+		git remote -v
+		git config --global hub.protocol https
+		git remote set-url origin https://\$GITHUB_TOKEN:x-oauth-basic@github.com/redhat-developer/''' + CRW_path + '''.git
+		git remote -v
+
+		# Check if che-machine-exec and che-theia plugins are current in upstream repo and if not, add them
+		# NOTE: we want the version of che in the pom, not the value of che computed for the dashboard (che.version override)
+		pushd dependencies/che-plugin-registry >/dev/null
+			./build/scripts/add_che_plugins.sh $(cat ${WORKSPACE}/''' + CRW_path + '''/pom.xml | grep -E "<che.version>" | sed -r -e "s#.+<che.version>(.+)</che.version>#\\1#")
+		popd >/dev/null
+		'''
+		
 		sh "mvn clean install ${MVN_FLAGS} -f ${CRW_path}/pom.xml -Dparent.version=\"${VER_CHE}\" -Dche.version=\"${VER_CHE}\" -Dcrw.dashboard.version=\"${CRW_SHAs}\" ${MVN_EXTRA_FLAGS}"
 
 		// Add dashboard and workspace-loader to server assembly
@@ -289,6 +311,7 @@ timeout(240) {
  :: ${CRW_path} @ ${SHA_CRW} (${VER_CRW})"
 		echo "${descriptString}"
 		currentBuild.description="${descriptString}"
+		}
 	  }
 	}
 }
